@@ -2,20 +2,18 @@ class User < ApplicationRecord
   has_secure_password
   has_one :profile, dependent: :destroy
 
-  # フォローする側の関連付け
+  # フォロー機能の関連付け
   has_many :active_follows, class_name: 'Follow', foreign_key: 'follower_id', dependent: :destroy
   has_many :followings, through: :active_follows, source: :following
-
-  # フォローされる側の関連付け
   has_many :passive_follows, class_name: 'Follow', foreign_key: 'following_id', dependent: :destroy
   has_many :followers, through: :passive_follows, source: :follower
 
-  # いいね機能の関連付けを追加
+  # いいね機能の関連付け
   has_many :likes, dependent: :destroy
   has_many :liked_posts, through: :likes, source: :post
-  
-  # ここに posts の関連付けを追加する必要があります
-  has_many :posts, dependent: :destroy # 👈 これを追加
+
+  has_many :posts, dependent: :destroy # 👈 ユーザーの投稿との関連付け
+  has_many :comments, dependent: :destroy # 👈 ユーザーのコメントとの関連付け
 
   def following?(other_user)
     active_follows.exists?(following: other_user)
