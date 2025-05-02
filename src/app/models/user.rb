@@ -13,6 +13,9 @@ class User < ApplicationRecord
   # いいね機能の関連付けを追加
   has_many :likes, dependent: :destroy
   has_many :liked_posts, through: :likes, source: :post
+  
+  # ここに posts の関連付けを追加する必要があります
+  has_many :posts, dependent: :destroy # 👈 これを追加
 
   def following?(other_user)
     active_follows.exists?(following: other_user)
