@@ -15,9 +15,11 @@ Rails.application.routes.draw do
       resources :likes, only: [:create, :destroy]
       resources :comments, only: [:destroy] # コメント ID で削除
       resources :follows, only: [:create, :destroy]
-      resources :conversations
+      resources :conversations do
+        resources :messages, only: [:index, :create] # conversations にネスト
+      end
       resources :conversation_users, only: [:create, :destroy]
-      resources :messages
+      resources :messages, only: [:show, :update, :destroy] # ID 指定のメッセージ操作はトップレベルに
       resources :notifications
     end
   end

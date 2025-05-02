@@ -15,6 +15,10 @@ class User < ApplicationRecord
   has_many :posts, dependent: :destroy # 👈 ユーザーの投稿との関連付け
   has_many :comments, dependent: :destroy # 👈 ユーザーのコメントとの関連付け
 
+  # 会話機能の関連付け
+  has_many :conversation_users, dependent: :destroy
+  has_many :conversations, through: :conversation_users
+
   def following?(other_user)
     active_follows.exists?(following: other_user)
   end
