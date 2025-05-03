@@ -1,7 +1,7 @@
 module Api
   module V1
     class ProfilesController < ApplicationController
-      before_action :authorize_request, except: [:show]
+      before_action :authorize_request
       before_action :set_profile, only: [:update]
       before_action :set_user_for_show, only: [:show]
 
