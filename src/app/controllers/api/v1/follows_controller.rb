@@ -4,6 +4,20 @@ module Api
       before_action :authorize_request # 認証処理を適用
       before_action :set_user, only: [:create, :destroy] # フォロー/アンフォロー対象のユーザーを取得
 
+      def index
+        following_users = current_user.followings.includes(profile: { user_icon_attachment: :blob }).select(:id, :username)
+        following_users_with_icons = following_users.map do |user|
+          user_data = user.attributes.slice('id', 'username')
+          if user.profile&.user_icon&.attached?
+            user_data['user_icon_url'] = url_for(user.profile.user_icon)
+          else
+            user_data['user_icon_url'] = nil
+          end
+          user_data
+        end
+        render json: following_users_with_icons
+      end
+
       def create
         # 自分が自分自身をフォローできないようにする
         if @user == current_user
@@ -19,7 +33,7 @@ module Api
 
         @follow = Follow.new(follower: current_user, following: @user) # current_user を follower に設定
         if @follow.save
-          render json: { message: "Successfully followed #{@user.username}." }, status: :created
+          render json: { message: "Successfully followed #{@user.username}.", is_following: true }, status: :created
         else
           render json: { errors: @follow.errors.full_messages }, status: :unprocessable_entity
         end
@@ -29,11 +43,12 @@ module Api
         @follow = current_user.active_follows.find_by(following: @user)
         if @follow
           @follow.destroy
-          render json: { message: "Successfully unfollowed #{@user.username}." }
+          render json: { message: "Successfully unfollowed #{@user.username}.", is_following: false }
         else
           render json: { error: "Not following this user." }, status: :not_found
         end
       end
+
       private
 
       def follow_params

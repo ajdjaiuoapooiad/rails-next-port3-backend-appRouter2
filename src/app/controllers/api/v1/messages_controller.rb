@@ -21,6 +21,18 @@ module Api
       def create
         @message = @conversation.messages.new(content: params[:content], user: current_user)
         if @message.save
+          # メッセージの受信者に通知を作成
+          @conversation.users.each do |user|
+            # 自分自身への通知は避ける
+            if user != current_user
+              Notification.create(
+                recipient_id: user.id, # 受信者のID
+                sender_id: current_user.id, # 送信者のID
+                notifiable: @message, # 通知対象をメッセージ自身に設定
+                notification_type: 'message'
+              )
+            end
+          end
           render json: @message, status: :created
         else
           render json: @message.errors, status: :unprocessable_entity
