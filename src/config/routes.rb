@@ -14,7 +14,7 @@ Rails.application.routes.draw do
       end
       resources :likes, only: [:create, :destroy]
       resources :comments, only: [:destroy] # コメント ID で削除
-      resources :follows, only: [:create, :destroy]
+      resources :follows, only: [:index, :create, :destroy]
       resources :conversations do
         resources :messages, only: [:index, :create] # conversations にネスト
       end

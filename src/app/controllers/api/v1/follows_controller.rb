@@ -4,6 +4,12 @@ module Api
       before_action :authorize_request # 認証処理を適用
       before_action :set_user, only: [:create, :destroy] # フォロー/アンフォロー対象のユーザーを取得
 
+      def index
+        following_users = current_user.followings.select(:id, :username)
+        render json: following_users
+      end
+
+
       def create
         # 自分が自分自身をフォローできないようにする
         if @user == current_user
