@@ -33,7 +33,7 @@ module Api
 
         @follow = Follow.new(follower: current_user, following: @user) # current_user を follower に設定
         if @follow.save
-          render json: { message: "Successfully followed #{@user.username}." }, status: :created
+          render json: { message: "Successfully followed #{@user.username}.", is_following: true }, status: :created
         else
           render json: { errors: @follow.errors.full_messages }, status: :unprocessable_entity
         end
@@ -43,7 +43,7 @@ module Api
         @follow = current_user.active_follows.find_by(following: @user)
         if @follow
           @follow.destroy
-          render json: { message: "Successfully unfollowed #{@user.username}." }
+          render json: { message: "Successfully unfollowed #{@user.username}.", is_following: false }
         else
           render json: { error: "Not following this user." }, status: :not_found
         end
