@@ -7,13 +7,15 @@ module Api
       def create
         @like = current_user.likes.new(like_params)
         if @like.save
-          # いいね！された投稿の作成者に通知を作成
-          Notification.create(
-            recipient_id: @like.post.user_id, # 投稿の作成者のID
-            sender_id: current_user.id,       # いいね！したユーザーのID
-            notifiable: @like.post,           # 通知対象を投稿自身に設定
-            notification_type: 'like'
-          )
+          # いいね！された投稿の作成者が自分自身ではない場合に通知を作成
+          unless @like.post.user_id == current_user.id
+            Notification.create(
+              recipient_id: @like.post.user_id, # 投稿の作成者のID
+              sender_id: current_user.id,       # いいね！したユーザーのID
+              notifiable: @like.post,           # 通知対象を投稿自身に設定
+              notification_type: 'like'
+            )
+          end
           render json: @like, status: :created
         else
           render json: { errors: @like.errors.full_messages }, status: :unprocessable_entity
