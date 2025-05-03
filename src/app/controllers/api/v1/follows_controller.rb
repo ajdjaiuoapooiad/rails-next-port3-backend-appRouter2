@@ -1,4 +1,3 @@
-# app/controllers/api/v1/follows_controller.rb
 module Api
   module V1
     class FollowsController < ApplicationController
@@ -20,23 +19,32 @@ module Api
 
         @follow = Follow.new(follower: current_user, following: @user) # current_user を follower に設定
         if @follow.save
-          # フォローされたユーザーに通知を作成
-          Notification.create(
-            recipient_id: @user.id, # フォローされたユーザーのID
-            sender_id: current_user.id, # フォローしたユーザーのID
-            notifiable: @follow, # 通知対象をフォロー関係自身に設定
-            notification_type: 'follow'
-          )
           render json: { message: "Successfully followed #{@user.username}." }, status: :created
         else
           render json: { errors: @follow.errors.full_messages }, status: :unprocessable_entity
         end
       end
 
-      # ...
+      def destroy
+        @follow = current_user.active_follows.find_by(following: @user)
+        if @follow
+          @follow.destroy
+          render json: { message: "Successfully unfollowed #{@user.username}." }
+        else
+          render json: { error: "Not following this user." }, status: :not_found
+        end
+      end
+      private
 
+      def follow_params
+        params.permit(:following_id) # following_id のみを受け取る
+      end
+
+      def set_user
+        @user = User.find(params[:following_id])
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "User not found." }, status: :not_found
+      end
     end
   end
 end
-```@follow.save` が成功した場合に、フォローされたユーザーへの通知を作成します。  
-通知の受信者は `@user` (フォローされたユーザー)、送信者は `current_user` (フォローしたユーザー) となります。
