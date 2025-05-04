@@ -5,24 +5,33 @@ module Api
       before_action :set_post, only: [:show, :update, :destroy]
 
       def index
-        @posts = Post.all.order(created_at: :desc).map do |post|
-          post.as_json(include: :user).merge( # ユーザー情報も一緒に返す (必要に応じて)
-            likes_count: post.likes.count,
-            is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id)
-          )
+        if params[:user_id].present?
+          @posts = Post.where(user_id: params[:user_id]).order(created_at: :desc).map do |post|
+            post.as_json(include: :user).merge(
+              likes_count: post.likes.count,
+              is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id)
+            )
+          end
+        else
+          @posts = Post.all.order(created_at: :desc).map do |post|
+            post.as_json(include: :user).merge(
+              likes_count: post.likes.count,
+              is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id)
+            )
+          end
         end
         render json: @posts
       end
 
       def show
-        render json: @post.as_json(include: :user).merge( # ユーザー情報も一緒に返す
+        render json: @post.as_json(include: :user).merge(
           likes_count: @post.likes.count,
           is_liked_by_current_user: current_user&.likes&.exists?(post_id: @post.id)
         )
       end
 
       def create
-        @post = current_user.posts.new(post_params) # current_userに関連付けて投稿を作成
+        @post = current_user.posts.new(post_params)
         if @post.save
           render json: @post, status: :created
         else
@@ -40,7 +49,7 @@ module Api
 
       def destroy
         @post.destroy
-        head :no_content # 204 No Content - 削除成功時にボディを返さない
+        head :no_content
       end
 
       private
@@ -52,7 +61,7 @@ module Api
       end
 
       def post_params
-        params.require(:post).permit(:content, :post_type, :media_url) # user_id は current_user から取得
+        params.require(:post).permit(:content, :post_type, :media_url)
       end
     end
   end
