@@ -10,11 +10,8 @@ module Api
           current_user_id = current_user.id
 
           @conversation = Conversation.joins(:users)
-                                      .where(users: { id: [current_user_id, recipient_id] })
-                                      .group('conversations.id')
-                                      .having('COUNT(DISTINCT users.id) = 2')
-                                      .includes(:users, :messages)
-                                      .first
+          .where(users: { id: [current_user_id, recipient_id] })
+          .first
 
           if @conversation
             render json: {
