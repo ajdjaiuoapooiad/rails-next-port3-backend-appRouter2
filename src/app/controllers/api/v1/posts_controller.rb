@@ -3,6 +3,7 @@ module Api
     class PostsController < ApplicationController
       before_action :authorize_request
       before_action :set_post, only: [:show, :update, :destroy]
+      before_action :check_user_ownership, only: [:update, :destroy]
 
       def index
         if params[:user_id].present? && params[:is_liked_by_current_user] == 'true'
@@ -87,6 +88,12 @@ module Api
 
       def post_params
         params.require(:post).permit(:content, :post_type, :media_url)
+      end
+
+      def check_user_ownership
+        unless @post.user_id == current_user.id
+          render json: { error: '許可されていません' }, status: :forbidden
+        end
       end
     end
   end
