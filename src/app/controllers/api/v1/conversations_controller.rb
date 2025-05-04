@@ -5,16 +5,40 @@ module Api
       before_action :set_conversation, only: [:show]
 
       def index
-        # 現在のユーザーが参加している会話の一覧を取得
-        @conversations = current_user.conversations.includes(:users, :messages)
-        render json: @conversations.map { |conversation|
-          {
-            id: conversation.id,
-            participants: conversation.users.map { |user| { id: user.id, username: user.username } },
-            last_message: conversation.messages.last&.content,
-            last_message_at: conversation.messages.last&.created_at
+        if params[:user_id].present?
+          recipient_id = params[:user_id].to_i
+          current_user_id = current_user.id
+
+          @conversation = Conversation.joins(:users)
+                                      .where(users: { id: [current_user_id, recipient_id] })
+                                      .group('conversations.id')
+                                      .having('COUNT(DISTINCT users.id) = 2')
+                                      .includes(:users, :messages)
+                                      .first
+
+          if @conversation
+            render json: {
+              id: @conversation.id,
+              participants: @conversation.users.map { |user| { id: user.id, username: user.username } },
+              last_message: @conversation.messages.last&.content,
+              last_message_at: @conversation.messages.last&.created_at
+            }
+          else
+            render json: { message: '会話が見つかりません' }, status: :not_found
+          end
+        else
+          @conversations = current_user.conversations.includes(:users, :messages)
+          render json: @conversations.map { |conversation|
+            {
+              id: conversation.id,
+              participants: conversation.users.map { |user| { id: user.id, username: user.username } },
+              last_message: conversation.messages.last&.content,
+              last_message_at: conversation.messages.last&.created_at
+            }
           }
-        }
+        end
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'User not found' }, status: :not_found if params[:user_id].present?
       end
 
       def show
@@ -22,26 +46,11 @@ module Api
       end
 
       def create
-        # 新しい1対1の会話を作成 (例: recipient_id をパラメータで受け取る)
         recipient = User.find(params[:recipient_id])
-
-        # 既存の会話を検索
-        @conversation = Conversation.between(current_user.id, recipient.id).first
-
-        if @conversation
-          # 既存の会話が存在する場合、それを返す
-          render json: @conversation, status: :ok
-        else
-          # 既存の会話がない場合のみ、新しい会話を作成
-          @conversation = Conversation.new
-          @conversation.users << current_user
-          @conversation.users << recipient
-          if @conversation.save
-            render json: @conversation, status: :created
-          else
-            render json: { error: 'Failed to create conversation' }, status: :unprocessable_entity
-          end
-        end
+        @conversation = Conversation.between(current_user.id, recipient.id).first_or_create
+        ConversationUser.find_or_create_by(conversation: @conversation, user: current_user)
+        ConversationUser.find_or_create_by(conversation: @conversation, user: recipient)
+        render json: @conversation, status: :created
       rescue ActiveRecord::RecordNotFound
         render json: { error: 'Recipient not found' }, status: :not_found
       end
