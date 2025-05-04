@@ -1,4 +1,3 @@
-# app/controllers/api/v1/conversations_controller.rb
 module Api
   module V1
     class ConversationsController < ApplicationController
@@ -25,10 +24,24 @@ module Api
       def create
         # 新しい1対1の会話を作成 (例: recipient_id をパラメータで受け取る)
         recipient = User.find(params[:recipient_id])
-        @conversation = Conversation.between(current_user.id, recipient.id).first_or_create
-        ConversationUser.find_or_create_by(conversation: @conversation, user: current_user)
-        ConversationUser.find_or_create_by(conversation: @conversation, user: recipient)
-        render json: @conversation, status: :created
+
+        # 既存の会話を検索
+        @conversation = Conversation.between(current_user.id, recipient.id).first
+
+        if @conversation
+          # 既存の会話が存在する場合、それを返す
+          render json: @conversation, status: :ok
+        else
+          # 既存の会話がない場合のみ、新しい会話を作成
+          @conversation = Conversation.new
+          @conversation.users << current_user
+          @conversation.users << recipient
+          if @conversation.save
+            render json: @conversation, status: :created
+          else
+            render json: { error: 'Failed to create conversation' }, status: :unprocessable_entity
+          end
+        end
       rescue ActiveRecord::RecordNotFound
         render json: { error: 'Recipient not found' }, status: :not_found
       end
