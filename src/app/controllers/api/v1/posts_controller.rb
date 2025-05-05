@@ -14,7 +14,8 @@ module Api
               post.as_json(include: :user).merge(
                 likes_count: post.likes.count,
                 is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id),
-                user_icon_url: user_icon_url
+                user_icon_url: user_icon_url,
+                comments_count: post.comments.count # ここでコメント数を追加
               )
             end
           else
@@ -27,7 +28,8 @@ module Api
             post.as_json(include: :user).merge(
               likes_count: post.likes.count,
               is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id),
-              user_icon_url: user_icon_url
+              user_icon_url: user_icon_url,
+              comments_count: post.comments.count # ここでコメント数を追加
             )
           end
         elsif params[:is_liked_by_current_user] == 'true'
@@ -37,7 +39,8 @@ module Api
               post.as_json(include: :user).merge(
                 likes_count: post.likes.count,
                 is_liked_by_current_user: true,
-                user_icon_url: user_icon_url
+                user_icon_url: user_icon_url,
+                comments_count: post.comments.count # ここでコメント数を追加
               )
             end
           else
@@ -51,7 +54,8 @@ module Api
             post_data.merge(
               likes_count: post.likes.count,
               is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id),
-              user_icon_url: user_icon_url
+              user_icon_url: user_icon_url,
+              comments_count: post.comments.count # ここでコメント数を追加
             )
           end
         end
@@ -63,7 +67,8 @@ module Api
         render json: @post.as_json(include: :user).merge(
           likes_count: @post.likes.count,
           is_liked_by_current_user: current_user&.likes&.exists?(post_id: @post.id),
-          user_icon_url: user_icon_url # ここで追加
+          user_icon_url: user_icon_url,
+          comments_count: @post.comments.count # ここでコメント数を追加
         )
       end
 
