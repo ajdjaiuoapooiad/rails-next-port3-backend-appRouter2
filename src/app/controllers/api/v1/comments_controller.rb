@@ -7,7 +7,14 @@ module Api
       before_action :authorize_comment_owner, only: [:destroy]
 
       def index
-        @comments = @post.comments.order(created_at: :asc) # 作成日時順に取得
+        @comments = @post.comments.order(created_at: :asc).map do |comment|
+          user = comment.user
+          user_icon_url = user.profile&.user_icon&.attached? ? url_for(user.profile.user_icon) : nil
+          comment.as_json(include: :user).merge(
+            user_icon_url: user_icon_url,
+            display_name: user.display_name.present? ? user.display_name : user.username
+          )
+        end
         render json: @comments
       end
 
