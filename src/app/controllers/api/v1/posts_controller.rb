@@ -40,9 +40,12 @@ module Api
           end
         else
           @posts = Post.all.order(created_at: :desc).map do |post|
-            post.as_json(include: :user).merge(
+            post_data = post.as_json(include: { user: { include: :profile } })
+            user_icon_url = post.user.profile&.user_icon&.attached? ? url_for(post.user.profile.user_icon) : nil
+            post_data.merge(
               likes_count: post.likes.count,
-              is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id)
+              is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id),
+              user_icon_url: user_icon_url # ここで追加
             )
           end
         end
