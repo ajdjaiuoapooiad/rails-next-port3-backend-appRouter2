@@ -10,8 +10,9 @@ module Api
           current_user_id = current_user.id
 
           @conversation = Conversation.joins(:users)
-          .where(users: { id: [current_user_id, recipient_id] })
-          .first
+                                      .where(users: { id: [recipient_id] })
+                                      .includes(:users, :messages)
+                                      .first
 
           if @conversation
             render json: {
