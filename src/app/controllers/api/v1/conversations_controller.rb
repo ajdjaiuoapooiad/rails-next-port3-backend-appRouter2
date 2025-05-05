@@ -22,7 +22,7 @@ module Api
               last_message_at: @conversation.messages.last&.created_at
             }
           else
-            render json: { message: '会話が見つかりません' }, status: :not_found
+            render json: [] # 空のレスポンスを返す
           end
         else
           @conversations = current_user.conversations.includes(:users, :messages)
