@@ -10,9 +10,12 @@ module Api
           user = User.find_by(id: params[:user_id])
           if user
             @posts = user.liked_posts.order(created_at: :desc).map do |post|
+              user_icon_url = post.user.profile&.user_icon&.attached? ? url_for(post.user.profile.user_icon) : nil
               post.as_json(include: :user).merge(
                 likes_count: post.likes.count,
-                is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id)
+                is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id),
+                user_icon_url: user_icon_url,
+                comments_count: post.comments.count # ここでコメント数を追加
               )
             end
           else
@@ -21,17 +24,23 @@ module Api
           end
         elsif params[:user_id].present?
           @posts = Post.where(user_id: params[:user_id]).order(created_at: :desc).map do |post|
+            user_icon_url = post.user.profile&.user_icon&.attached? ? url_for(post.user.profile.user_icon) : nil
             post.as_json(include: :user).merge(
               likes_count: post.likes.count,
-              is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id)
+              is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id),
+              user_icon_url: user_icon_url,
+              comments_count: post.comments.count # ここでコメント数を追加
             )
           end
         elsif params[:is_liked_by_current_user] == 'true'
           if current_user
             @posts = current_user.liked_posts.order(created_at: :desc).map do |post|
+              user_icon_url = post.user.profile&.user_icon&.attached? ? url_for(post.user.profile.user_icon) : nil
               post.as_json(include: :user).merge(
                 likes_count: post.likes.count,
-                is_liked_by_current_user: true
+                is_liked_by_current_user: true,
+                user_icon_url: user_icon_url,
+                comments_count: post.comments.count # ここでコメント数を追加
               )
             end
           else
@@ -40,9 +49,13 @@ module Api
           end
         else
           @posts = Post.all.order(created_at: :desc).map do |post|
-            post.as_json(include: :user).merge(
+            user_icon_url = post.user.profile&.user_icon&.attached? ? url_for(post.user.profile.user_icon) : nil
+            post_data = post.as_json(include: { user: { include: :profile } })
+            post_data.merge(
               likes_count: post.likes.count,
-              is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id)
+              is_liked_by_current_user: current_user&.likes&.exists?(post_id: post.id),
+              user_icon_url: user_icon_url,
+              comments_count: post.comments.count # ここでコメント数を追加
             )
           end
         end
@@ -50,9 +63,12 @@ module Api
       end
 
       def show
+        user_icon_url = @post.user.profile&.user_icon&.attached? ? url_for(@post.user.profile.user_icon) : nil
         render json: @post.as_json(include: :user).merge(
           likes_count: @post.likes.count,
-          is_liked_by_current_user: current_user&.likes&.exists?(post_id: @post.id)
+          is_liked_by_current_user: current_user&.likes&.exists?(post_id: @post.id),
+          user_icon_url: user_icon_url,
+          comments_count: @post.comments.count # ここでコメント数を追加
         )
       end
 
